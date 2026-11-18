@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+Sign-Language-Interpreter-using-Deep-Learning-master/Code/dataset/landmarks.csv
+Sign-Language-Interpreter-using-Deep-Learning-master/Code/dataset/landmarks_phrases.csv
+Sign-Language-Interpreter-using-Deep-Learning-master/Code/dataset/raw_asl_now/
+Sign-Language-Interpreter-using-Deep-Learning-master/Code/models/*.joblib
+!Sign-Language-Interpreter-using-Deep-Learning-master/Code/models/sign_svm.joblib
+Sign-Language-Interpreter-using-Deep-Learning-master/Code/users.db
+Sign-Language-Interpreter-using-Deep-Learning-master/Code/*.db

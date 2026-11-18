@@ -1,0 +1,442 @@
+# Vani-Setu
+
+<p align="center">
+  <strong>voice-bridge</strong> — real-time ASL / ISL translation from a laptop camera
+</p>
+
+<p align="center">
+  <a href="https://vani-setu.onrender.com"><img src="https://img.shields.io/badge/Live_Demo-vani--setu.onrender.com-0b5f66?style=for-the-badge" alt="Live demo"></a>
+  <a href="https://github.com/ShadowAN-AB/Vani_Setu"><img src="https://img.shields.io/badge/GitHub-ShadowAN--AB%2FVani__Setu-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/Flask-API-000000?style=flat-square&logo=flask&logoColor=white" alt="Flask">
+  <img src="https://img.shields.io/badge/MediaPipe-Hand_Landmarker-009688?style=flat-square&logo=google&logoColor=white" alt="MediaPipe">
+  <img src="https://img.shields.io/badge/scikit--learn-SVM_RBF-F7931E?style=flat-square&logo=scikitlearn&logoColor=white" alt="scikit-learn">
+  <img src="https://img.shields.io/badge/Ollama-sentence_polish-6c40c9?style=flat-square" alt="Ollama">
+  <img src="https://img.shields.io/badge/Letters-96.0%25_test-0b5f66?style=flat-square" alt="96.0% test accuracy on 1,563 samples">
+  <img src="https://img.shields.io/badge/SQLite-accounts-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite">
+  <img src="https://img.shields.io/badge/Render-HTTPS-46E3B7?style=flat-square&logo=render&logoColor=black" alt="Render">
+</p>
+
+**Live app:** [https://vani-setu.onrender.com](https://vani-setu.onrender.com) · **Code:** [`ShadowAN-AB/Vani_Setu`](https://github.com/ShadowAN-AB/Vani_Setu)
+
+A laptop camera tracks one or two hands in the browser. Machine learning turns
+them into fingerspelled letters or whole signs, the app builds a sentence (with
+word prediction that can fix a misread letter), speaks it, and shows it in
+English and Hindi. A built-in **Dictionary** teaches every sign; an optional
+local **Ollama** model can polish rough glosses into natural English.
+
+---
+
+## 🚀 Get it running on your laptop (3 minutes)
+
+**You need:** macOS or Linux, Python 3.10+ (3.13 recommended), a webcam, and ~2 GB of free disk.
+
+```bash
+git clone https://github.com/ShadowAN-AB/Vani_Setu.git
+cd Vani_Setu
+chmod +x run.sh
+./run.sh
+```
+
+Then open **http://127.0.0.1:5001** → **Create account** → **Sign in** → **Start camera**.
+
+That's it. The first run downloads pip packages (~1–3 min), creates a Python
+virtualenv under `Sign-Language-Interpreter-using-Deep-Learning-master/Code/.venv`,
+auto-fetches MediaPipe's `hand_landmarker.task` if missing, and boots Flask on
+port 5001. Later runs start in 2–5 seconds.
+
+### Optional: enable the "Polish" button (local LLM)
+
+Install [Ollama](https://ollama.com) and pull a small model once:
+
+```bash
+brew install ollama           # macOS
+ollama pull qwen2.5:3b-instruct
+```
+
+Next time you run `./run.sh`, it detects Ollama, starts it in the background,
+and the **Polish** + **Fix with LLM** chips light up. If Ollama isn't installed
+the app just runs without them — nothing breaks.
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| **"Port 5001 already in use"** | macOS AirPlay sometimes grabs 5000; a stale Flask process can hold 5001. Run `lsof -ti :5001 \| xargs kill` and retry. |
+| **"Permission denied: ./run.sh"** | `chmod +x run.sh` once. |
+| **Camera prompt never appears** | Chrome / Safari block webcam on untrusted hosts. Use `http://127.0.0.1:5001` exactly — not `localhost:5001`, which isn't whitelisted by default on some setups. |
+| **"No module named flask" after cloning** | You skipped `./run.sh` and ran `python server.py` directly. Use `./run.sh` first — it builds the venv and installs deps. |
+| **DETECTED SIGN stays on `...` even though confidence shows a letter** | Hard-refresh (⌘+Shift+R / Ctrl+Shift+R) once — cached JS from an earlier version. |
+| **"Failed to parse URL from /hand_landmarker.task"** | You opened the HTML file directly from disk (`file://`). You need to visit `http://127.0.0.1:5001` served by Flask. |
+| **Letter model fails to load** | Only happens if `models/sign_svm.joblib` is missing. `git lfs pull` or re-clone; the file is tracked in git. |
+
+### Stop the app
+
+`Ctrl+C` in the terminal running `run.sh`. The camera LED turns off automatically.
+
+---
+
+## What you'll see once it's running
+
+1. **Sign-in screen** — create an account the first time, then sign in.
+2. **Camera panel** on the left, **Translation pane** on the right.
+3. By default you land on **SPELL** mode (A–Z fingerspelling with the trained SVM).
+4. Toggle **PHRASE** at the bottom for whole-sign ASL words (Hello, OK, I Love You, …).
+5. The **US ASL / IN ISL** tabs on the input side switch between ASL and Indian Sign Language.
+6. **Space** commits a word; **Sentence** finalizes with a period and speaks it.
+7. Click the **Hindi** tab under OUTPUT to see live translation and press **Speak**.
+8. Open the **Dictionary** (top nav) for drawings of every supported sign.
+
+Full demo flow for a viva: see [DEMO_AND_VIVA.md](DEMO_AND_VIVA.md).
+
+---
+
+## What's new (October 2026)
+
+| Area | Change |
+|------|--------|
+| **Letter model** | 88 features instead of 63 (palm-length scaling, 10 fingertip distances, 15 joint angles); training data augmented with mirrored, tilted and jittered copies; 70 / 15 / 15 split with C and γ tuned on validation. **96.0%** test accuracy / **97.1%** validation on 10,418 samples drawn from two independent sources. |
+| **Robustness** | Mirrored (other hand): 96.0%. Tilted +15°: 94.8% (−15°: 95.4%). Hand 40% smaller: 96.0%. All numbers from `reports/metrics.json`. |
+| **Phrase & ISL** | Finger-pose rules in the browser (JavaScript), guarded against regression by `tools/check_rules.py`. The earlier MLP scaffold was removed; it was never trained and the live site only ever ran rules. |
+| **Two hands** | MediaPipe tracks two hands; the Left / Right label is used by the rule classifiers for signs like "I Love You". |
+| **Word prediction** | Noisy-channel model: word frequency × how often the classifier confuses letters, so X-E-D still suggests RED. |
+| **Dictionary** | New screen showing how to make every letter and sign, with drawings and English / Hindi instructions. |
+| **Output** | Translation is now English and Hindi only. |
+| **Data** | Every sample is stored as raw landmarks with the signer's name, hand and a **Test set** flag for new-signer testing. |
+| **Evaluation** | `evaluate.py`: before/after, cross-validation, learning and validation curves, PCA / t-SNE, speed. `compare_models.py`: six models on identical data. |
+| **App** | Holding a sign types it once; unsure frames are ignored; the label always matches its confidence; FPS badge shows response time. |
+| **Security** | The server only serves the web page and hand model (before, `users.db` and `.env` could be downloaded). Recording and retraining are local only. |
+| **Clean-up** | Original hackathon CNN code moved to `legacy/` and credited. |
+
+---
+
+## Results
+
+Current model is trained on **10,418 samples from two independent sources**
+(ASL Now + Kaggle `grassknoted/asl-alphabet` images preprocessed through our
+MediaPipe pipeline — see `tools/kaggle_to_landmarks.py`) and evaluated on a
+held-out **1,563-sample** test set. Full report: [`reports/evaluation.md`](Sign-Language-Interpreter-using-Deep-Learning-master/Code/reports/evaluation.md).
+
+| Test condition | Current model |
+|----------------|---------------|
+| Normal | **96.0%** |
+| Other hand (mirrored) | 96.0% |
+| Tilted +15° | 94.8% |
+| Tilted −15° | 95.4% |
+| Hand 40% smaller (farther away) | 96.0% |
+
+An earlier version trained on ASL Now alone (2,122 samples) scored 96.9% on a
+smaller 319-sample test set from one source; the current numbers are on a
+test set **5× larger and drawn from two sources**, which is a harder bar.
+
+![Before and after](Sign-Language-Interpreter-using-Deep-Learning-master/Code/reports/eval_before_after.png)
+
+| Model (same data and features) | Test accuracy |
+|--------------------------------|---------------|
+| **SVM, RBF kernel** (live model) | **96.0%** on 1,563 mixed-source samples |
+| SVM, RBF kernel | 97.2% in `compare_models.py` on the original 319-sample ASL-Now-only test (fixed C/γ, same split for all models) |
+| MLP neural network | 96.2% (same comparison dataset) |
+| Random Forest | 96.2% |
+| Logistic Regression | 95.9% |
+| K-Nearest Neighbours | 95.0% |
+| Decision Tree | 90.9% |
+
+---
+
+## Tech stack
+
+| Layer | Tools |
+|:------|:------|
+| **Interface** | HTML5 · CSS3 · vanilla JavaScript · Google Fonts (Fraunces / Sora) |
+| **Vision** | [MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) (21-point Hand Landmarker in the browser) · `getUserMedia` camera |
+| **Backend** | Python 3 · Flask · Flask-CORS · Gunicorn |
+| **Machine learning** | scikit-learn **RBF SVM** for letters (96.0% test, Platt-scaled probabilities) · landmark augmentation (mirror / rotate / jitter) · noisy-channel word prediction · matplotlib reports |
+| **Accounts** | Flask-SQLAlchemy · Werkzeug password hashes · SQLite locally · optional Postgres (`DATABASE_URL`) |
+| **Speech & language** | Web Speech API (speak) · English → Hindi with deep-translator / Google Translate · offline Hindi fallback |
+| **Data** | ASL Now fingerspelling landmarks (Hugging Face, MIT) + team recordings · raw 21-point landmarks · 88 features (scaled points, fingertip distances, joint angles) |
+| **Run & ship** | `run.sh` on localhost · Render (HTTPS) · GitHub · python-dotenv |
+
+```text
+Browser (HTML / CSS / JS + MediaPipe, up to 2 hands)
+        │  21 landmarks per hand (never video)
+        ▼
+Flask API ──► SVM, 88 features (Spell)
+        │ ──► MLP, 181 features (Phrase / ISL, once trained; rules until then)
+        │ ──► word prediction (/api/suggest)
+        ├── SQLite / Postgres   (login)
+        └── Translate + Speak
+```
+
+---
+
+## What it does
+
+| Mode | What happens |
+|------|----------------|
+| **Spell** | Fingerspelling A–Z. An RBF **SVM** classifies 88 landmark features (**96.0%** test accuracy on 1,563 held-out samples spanning two sources, 94–96% under the mirror / tilt / scale stress tests in `reports/metrics.json`). |
+| **Phrase** | 15 whole-sign ASL phrases (Hello, Yes, OK, I Love You, …) classified by JavaScript finger-pose rules on 21-point landmarks. |
+| **ISL** | 12 Indian Sign Language signs (Namaste, Thank You, Water, Help, …) via the same rule approach. Not a certified ISL lexicon — a teaching approximation. |
+| **Practice** | The app prompts a letter and scores your attempts. |
+| **Translate / Speak** | The sentence in English or Hindi, plus browser speech. Hindi has an offline fallback if Google Translate is down. |
+| **Dictionary** | How to make every sign: letters A–Z drawn from real recorded hands, ASL phrases and ISL signs drawn from the shape the app recognises, with instructions in English or Hindi, search, and a **Try it** button. |
+
+Also included:
+
+- Email + password login (hashed passwords in a local **SQLite** file)
+- Live confidence bar whenever a trained model is in use, plus a **ML MODEL / RULES** badge
+- Word prediction while spelling: a noisy-channel model (word frequencies × the letter model's confusion matrix) can fix a misread letter, e.g. X-E-D → RED; corrected suggestions have a dashed border
+- Holding a sign types it once; drop the hand briefly for a double letter
+- Optional local **Ollama** polish: turns "ME GO SCHOOL YESTERDAY" into "I went to school yesterday." and fixes mis-spelled words
+- Dictionary (शब्दकोश) of all 53 signs, searchable in English or Hindi
+
+---
+
+## How it works
+
+1. You create an account or sign in.
+2. The browser camera + **MediaPipe Hand Landmarker** finds 21 landmarks on each of up to two hands. Tracking stays on the device; only the landmark numbers go to the server.
+3. **Spell** sends the landmarks to Flask (`/api/classify`), which computes 88 features and returns the most likely letter, its probability and the top 3 from the SVM. Frames below the confidence threshold chosen on validation data (0.70) vote “unsure”, and a 14-frame vote reduces flicker.
+4. **Phrase / ISL** run entirely in the browser as JavaScript finger-pose rules against the 21-point landmark set — no server call, no model file.
+5. While you spell, `/api/suggest` ranks likely words from a 10K word list, scored by frequency × the SVM's confusion matrix, so a misread letter can still resolve.
+6. You assemble a sentence, speak it, translate it to Hindi, or (optionally) polish it through a locally-running Ollama model.
+
+Login does **not** need MongoDB. Accounts are stored in `Sign-Language-Interpreter-using-Deep-Learning-master/Code/users.db`. On a host you can set `DATABASE_URL` for Postgres instead.
+
+---
+
+## Running it (details)
+
+The "3-minute quick start" above is the recommended path. The sections below
+are for people who want more control or who hit something unusual.
+
+### Manual start (bypasses `run.sh`)
+
+```bash
+cd Sign-Language-Interpreter-using-Deep-Learning-master/Code
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements_web.txt
+PORT=5001 python server.py
+```
+
+### Windows
+
+Double-click `Sign-Language-Interpreter-using-Deep-Learning-master/RUN_VANI_SETU.bat`
+(or `QUICK_START.bat`). The default port on those scripts may be 5000; adjust
+to 5001 if AirPlay / another app conflicts.
+
+### Environment variables (all optional)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PORT` | 5001 | Flask bind port |
+| `HOST` | 127.0.0.1 (0.0.0.0 on Render) | Flask bind host |
+| `OLLAMA_URL` | *(unset — Polish disabled)* | Where `./run.sh` auto-wires it when Ollama is installed |
+| `OLLAMA_MODEL` | `qwen2.5:3b-instruct` | LLM for sentence polish + word fix |
+| `OLLAMA_TIMEOUT` | 15 | Max seconds to wait for a reply |
+| `DATABASE_URL` | *(unset — SQLite in `users.db`)* | Postgres URL for persistent accounts on a host |
+| `ALLOW_TRAINING` | *(auto)* | On localhost always on; off on Render unless you set `1` |
+
+---
+
+## First-time files
+
+| File | In git? | What happens |
+|------|---------|----------------|
+| `Code/models/sign_svm.joblib` | Yes | Spell-mode SVM bundle (model, feature version, threshold). Present after `git clone`. |
+| `Code/hand_landmarker.task` | No (~7.5 MB) | MediaPipe hand model. The server **downloads it on first run** if missing. |
+
+`users.db` stays local and gitignored. The hosted demo uses the same SQLite file (recreated empty on each cold start) or a Postgres addon via `DATABASE_URL`.
+
+Keep this project folder for the viva. GitHub now has the letter model; you do not need a USB copy of `sign_svm.joblib`.
+
+---
+
+## Public URL
+
+**Live:** [https://vani-setu.onrender.com](https://vani-setu.onrender.com)
+
+Localhost does not change. To redeploy after a code push:
+
+1. Push `main` to GitHub (Render auto-builds).
+2. Or [render.com](https://render.com) → **New** → **Web Service**:
+   - Build: `pip install -r requirements.txt`
+   - Start: `bash start.sh`
+3. Open the `https://` URL → **Create account** → **Sign in** → **Start camera**.
+
+Full notes: [DEPLOY.md](DEPLOY.md). Free Render apps sleep after idle time; the first hit after sleep can take about a minute.
+
+---
+
+## Health check
+
+With the server running:
+
+```bash
+curl -s http://127.0.0.1:5001/api/health
+```
+
+`ready_for_demo: true` means the classifier and `hand_landmarker.task` are both present.
+
+---
+
+## Coming back after a break
+
+```bash
+cd /path/to/Vani-Setu
+./run.sh
+```
+
+Then open **http://127.0.0.1:5001**. Accounts in `users.db` stay on disk. Nothing expires. If Python on the Mac was upgraded, `./run.sh` recreates `.venv`.
+
+---
+
+## Login
+
+Email + password only, hashed with Werkzeug's PBKDF2 (`User.set_password` /
+`check_password`) and stored in a local SQLite file (`Code/users.db`) or in
+Postgres if `DATABASE_URL` is set. There is no OTP, no guest skip, no
+third-party sign-in — one form, two buttons (**Sign in** / **Create account**).
+
+Hosted deploy notes (Render, HTTPS, Postgres): see [DEPLOY.md](DEPLOY.md).
+
+---
+
+## Retraining the letter model
+
+The letter SVM is already trained and shipped as `Code/models/sign_svm.joblib`
+(96% test accuracy on 1,563 held-out samples). You only need to retrain if you
+add new data. The Record / Retrain UI was removed in favour of the terminal
+flow — simpler and more honest:
+
+```bash
+cd Sign-Language-Interpreter-using-Deep-Learning-master/Code
+.venv/bin/python train_classifier.py       # train + reports (70/15/15 split, augmentation, grid search)
+.venv/bin/python compare_models.py         # six classifiers on the same data (reproducibility script)
+.venv/bin/python evaluate.py               # before/after, CV, learning + validation curves, PCA/t-SNE, speed
+```
+
+To extend the training set from a public image dataset without recording
+anything yourself:
+
+```bash
+# One-time Kaggle setup: create an API token at kaggle.com/settings
+.venv/bin/kaggle datasets download -d grassknoted/asl-alphabet --unzip -p /tmp/kaggle
+.venv/bin/python tools/kaggle_to_landmarks.py --input /tmp/kaggle/asl_alphabet_train/asl_alphabet_train --per-class 400
+.venv/bin/python train_classifier.py
+```
+
+This is how the current model got from 2,122 samples to 10,418.
+
+Reports land in `Code/reports/`: `metrics.json`, `evaluation.md`, `model_comparison.md` and the figures.
+
+---
+
+## Project layout
+
+```
+Vani-Setu/
+├── README.md                          ← this file
+├── run.sh                             ← Mac / Linux localhost launcher (port 5001)
+├── start.sh / Procfile / render.yaml  ← public host (Render / Railway)
+├── DEPLOY.md                          ← localhost vs Render
+├── DEMO_AND_VIVA.md                   ← demo checklist and viva talking points
+└── Sign-Language-Interpreter-using-Deep-Learning-master/
+    ├── README.md                      ← original HackUNT-19 project
+    ├── DOCUMENTATION.md               ← longer architecture notes
+    └── Code/
+        ├── index.html                 ← UI + MediaPipe
+        ├── server.py                  ← Flask APIs
+        ├── models_user.py             ← User table (SQLite / Postgres)
+        ├── data.py                    ← raw landmark storage (dataset + recordings)
+        ├── features.py                ← 88 landmark features (v2), 63 (v1)
+        ├── augment.py                 ← mirror / rotate / jitter augmentation
+        ├── build_dataset.py           ← ASL Now JSON → asl_now_landmarks.csv
+        ├── signs.py                   ← phrase / ISL rules + Hindi fallback
+        ├── train_classifier.py        ← SVM trainer
+        ├── compare_models.py          ← classifier benchmark (reproducibility)
+        ├── experiments_m2.py          ← Milestone-2 experiments (reproducibility)
+        ├── evaluate.py                ← evaluation report
+        ├── suggest.py                 ← noisy-channel word prediction
+        ├── build_wordlist.py          ← wordfreq → word_frequencies.csv
+        ├── requirements_web.txt       ← server
+        ├── requirements_train.txt     ← wordfreq, for rebuilding the word list only
+        ├── .env.example
+        ├── dataset/                   ← asl_now_landmarks.csv, word_frequencies.csv, recordings/, guides
+        ├── reports/                   ← metrics, evaluation, model comparison
+        └── models/                    ← sign_svm.joblib (letters)
+    └── legacy/                        ← original HackUNT-19 CNN code (unused, credited)
+```
+
+---
+
+## Dataset
+
+Spell-mode letters come from **ASL Now Fingerspelling** landmarks  
+([AxelS27/asl-now-fingerspelling](https://huggingface.co/datasets/AxelS27/asl-now-fingerspelling), MIT), stored as raw landmarks in `Code/dataset/asl_now_landmarks.csv` (2,122 samples, 26 letters).
+
+See `Code/dataset/DATASET_SOURCE.md` and `RECORDING_GUIDE.md`.
+
+---
+
+## Optional: sentence polishing with a local LLM
+
+The hands produce a terse gloss ("ME GO SCHOOL YESTERDAY"). You can route that
+through a local [Ollama](https://ollama.com) model to get natural English
+("I went to school yesterday.") without sending anything to a cloud API.
+
+1. Install Ollama and pull a small instruct model:
+   ```bash
+   ollama pull qwen2.5:3b-instruct
+   ```
+2. Start the Vani-Setu server with the Ollama URL:
+   ```bash
+   OLLAMA_URL=http://127.0.0.1:11434 ./run.sh
+   ```
+   Optional: `OLLAMA_MODEL=qwen2.5:1.5b` for a smaller model,
+   `OLLAMA_TIMEOUT=10` to shorten the per-request wait.
+3. Two things light up when the server detects Ollama:
+   - A **Polish** button next to Speak rewrites the whole sentence into natural
+     English. It sends the last couple of polished sentences as context so
+     follow-ups read coherently.
+   - A **Fix with LLM** chip appears in the word-suggestion bar whenever you
+     have at least two letters typed on the SPELL screen. One click swaps the
+     current letters for the LLM's best guess ("HELO" → "HELLO"), using the
+     sentence so far as context so rare words resolve correctly.
+   Both hide themselves and nothing breaks if Ollama goes away.
+
+The feature is off by default, so Render deploys and anyone without Ollama
+installed are unaffected.
+
+---
+
+## Honest limits
+
+- Recognition uses single frames, so motion letters **J** and **Z** are only partly covered (an LSTM over frame sequences is the next step).
+- Spell ML is **ASL fingerspelling**, not a full sign-language corpus; facial expressions are ignored.
+- Phrase and ISL modes use rules until you record samples and train their networks; the built-in ISL rules are a **classroom approximation**.
+- Accuracy is measured on the ASL Now dataset; record a new-signer test set (**Test set** box) to measure it on new people.
+- Browser camera works on `http://127.0.0.1` but **needs HTTPS** on a public URL.
+- This is a demo, not a production account system (session is `sessionStorage` after login).
+
+---
+
+## More docs
+
+- [DEMO_AND_VIVA.md](DEMO_AND_VIVA.md) — what to show an examiner
+- [DEPLOY.md](DEPLOY.md) — HTTPS on Render, optional Postgres for persistent accounts
+- [Sign-Language-Interpreter-using-Deep-Learning-master/DOCUMENTATION.md](Sign-Language-Interpreter-using-Deep-Learning-master/DOCUMENTATION.md) — older architecture write-up
+- Original hackathon app (CNN / OpenCV, not the web demo): [Sign-Language-Interpreter-using-Deep-Learning-master/README.md](Sign-Language-Interpreter-using-Deep-Learning-master/README.md)
+
+---
+
+## Credits
+
+- **Starting point:** this repository began from [Sign Language Interpreter using Deep Learning](https://github.com/harshbg/Sign-Language-Interpreter-using-Deep-Learning) by Harsh Gupta (HackUNT-19, 2019, MIT licence), which classified hand images with a Keras CNN. Vani-Setu replaced that pipeline; the original files are kept, unused, in `Sign-Language-Interpreter-using-Deep-Learning-master/legacy/`.
+- **Hand tracking:** [MediaPipe Hand Landmarker](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker) (Google).
+- **Letter dataset:** [ASL Now Fingerspelling Landmarks](https://huggingface.co/datasets/AxelS27/asl-now-fingerspelling) by AxelS27 (MIT licence).
+- **Word frequencies:** derived from [wordfreq](https://github.com/rspeer/wordfreq) by Robyn Speer (word list data CC BY-SA 4.0), in `Code/dataset/word_frequencies.csv`.
+- **Team:** Abdullah Naseem, Bhanu Satwik, Manoj Kumar K (CSET, Bennett University), guided by Dr. Mohd Anas.

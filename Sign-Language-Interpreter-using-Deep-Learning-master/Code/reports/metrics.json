@@ -1,0 +1,116 @@
+{
+  "accuracy": 0.9603,
+  "n_samples": 10418,
+  "n_classes": 26,
+  "model": "StandardScaler + SVC(rbf, C=3, gamma=scale, class_weight=balanced), Platt-scaled probabilities",
+  "feature_version": 2,
+  "n_features": 88,
+  "augmented": true,
+  "split": {
+    "train": 7292,
+    "train_after_augmentation": 43752,
+    "validation": 1563,
+    "test": 1563,
+    "new_signer_test": 0
+  },
+  "best_params": {
+    "C": 3,
+    "gamma": "scale"
+  },
+  "validation": {
+    "n": 1563,
+    "accuracy": 0.9706,
+    "macro_f1": 0.9689
+  },
+  "test": {
+    "n": 1563,
+    "accuracy": 0.9603,
+    "macro_f1": 0.9583
+  },
+  "robustness_test_accuracy": {
+    "original": 0.9603,
+    "mirrored (other hand)": 0.9597,
+    "tilted +15 degrees": 0.9482,
+    "tilted -15 degrees": 0.9539,
+    "hand 40% smaller (farther away)": 0.9603
+  },
+  "new_signer_test": null,
+  "confidence_threshold": {
+    "threshold": 0.7,
+    "kept_correct": 0.9835,
+    "rejected_errors": 0.4348
+  },
+  "top_confusions": [
+    {
+      "actual": "N",
+      "predicted": "M",
+      "count": 5
+    },
+    {
+      "actual": "R",
+      "predicted": "D",
+      "count": 3
+    },
+    {
+      "actual": "M",
+      "predicted": "N",
+      "count": 3
+    },
+    {
+      "actual": "Z",
+      "predicted": "M",
+      "count": 2
+    },
+    {
+      "actual": "X",
+      "predicted": "Z",
+      "count": 2
+    },
+    {
+      "actual": "U",
+      "predicted": "R",
+      "count": 2
+    },
+    {
+      "actual": "R",
+      "predicted": "U",
+      "count": 2
+    },
+    {
+      "actual": "P",
+      "predicted": "Q",
+      "count": 2
+    }
+  ],
+  "latency_ms_per_frame": 0.864,
+  "fit_seconds": 23.94,
+  "per_class_counts": {
+    "A": 379,
+    "B": 359,
+    "C": 314,
+    "D": 410,
+    "E": 371,
+    "F": 445,
+    "G": 433,
+    "H": 394,
+    "I": 392,
+    "J": 443,
+    "K": 433,
+    "L": 432,
+    "M": 334,
+    "N": 266,
+    "O": 417,
+    "P": 337,
+    "Q": 398,
+    "R": 426,
+    "S": 438,
+    "T": 385,
+    "U": 444,
+    "V": 423,
+    "W": 410,
+    "X": 423,
+    "Y": 428,
+    "Z": 484
+  },
+  "trained_at": "2026-11-02T14:25:53+00:00"
+}
