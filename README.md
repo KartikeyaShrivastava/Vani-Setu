@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/Render-HTTPS-46E3B7?style=flat-square&logo=render&logoColor=black" alt="Render">
 </p>
 
-**Live app:** [https://vani-setu.onrender.com](https://vani-setu.onrender.com) · **Code:** [`ShadowAN-AB/Vani_Setu`](https://github.com/ShadowAN-AB/Vani_Setu)
+**Live app:** [https://vani-setu.onrender.com](https://vani-setu.onrender.com) .
 
 A laptop camera tracks one or two hands in the browser. Machine learning turns
 them into fingerspelled letters or whole signs, the app builds a sentence (with
@@ -35,8 +35,8 @@ local **Ollama** model can polish rough glosses into natural English.
 **You need:** macOS or Linux, Python 3.10+ (3.13 recommended), a webcam, and ~2 GB of free disk.
 
 ```bash
-git clone https://github.com/ShadowAN-AB/Vani_Setu.git
-cd Vani_Setu
+git clone https://github.com/KartikeyaShrivastava/Vani-Setu.git
+cd Vani-Setu
 chmod +x run.sh
 ./run.sh
 ```
